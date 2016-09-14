@@ -1,0 +1,11 @@
+def line_count(dir)
+	# dir = "D:/Ruby/work/for_logs"
+	# Dir.chdir("D:/Ruby/work/for_logs")
+	# puts Dir.pwd
+	
+	log_files = File.join(dir, "*.log")
+	
+	Dir.glob(log_files).each {|f| puts "#{f} => #{File.open(f).readlines.size} строк}"}
+end
+
+line_count("D:/Ruby/work/for_logs")
