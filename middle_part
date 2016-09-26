@@ -1,11 +1,40 @@
-def line_count(dir)
-	# dir = "D:/Ruby/work/for_logs"
-	# Dir.chdir("D:/Ruby/work/for_logs")
-	# puts Dir.pwd
-	
-	log_files = File.join(dir, "*.log")
-	
-	Dir.glob(log_files).each {|f| puts "#{f} => #{File.open(f).readlines.size} строк}"}
+def parser(dir)
+
+# dir = "D:/Ruby/work/for_logs"
+# Dir.chdir("D:/Ruby/work/for_logs")
+# puts Dir.pwd
+
+log_files = File.join(dir, "*.log")
+
+
+stat = []
+
+	Dir.glob(log_files).map do |f| 
+
+		puts "   "
+		puts "   "
+		puts "----------------------------------------------------------------------------------------------------"
+		puts "   "
+		puts "   "
+		puts File.basename(f)
+		puts "   "
+
+		if File.file?(f)
+
+			stat = File.open(f).grep(/\[ERROR\]/)
+				
+			text = File.new("D:/Ruby/work/for_logs/result.rb", "a+")
+			text.write(stat.join("\n"))
+			text.close
+			
+			puts stat
+
+		end
+
+	end
+
+# $stderr = errors
+
 end
 
-line_count("D:/Ruby/work/for_logs")
+parser("D:/Ruby/work/for_logs/")
