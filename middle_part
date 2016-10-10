@@ -1,3 +1,5 @@
+#encoding: UTF-8
+
 def parser(dir)
 
 # dir = "D:/Ruby/work/for_logs"
@@ -6,32 +8,21 @@ def parser(dir)
 
 log_files = File.join(dir, "*.log")
 
-
-stat = []
-
+stat = {}
 	Dir.glob(log_files).map do |f| 
-
-		puts "   "
-		puts "   "
-		puts "----------------------------------------------------------------------------------------------------"
-		puts "   "
-		puts "   "
-		puts File.basename(f)
-		puts "   "
-
 		if File.file?(f)
-
-			stat = File.open(f).grep(/\[ERROR\]/)
-				
+			key = File.basename(f)
+			val = File.open(f).grep(/\[ERROR\]/)
+			stat = {key => val}
 			text = File.new("D:/Ruby/work/for_logs/result.rb", "a+")
-			text.write(stat.join("\n"))
+			text.write("#{"\n"*3} #{"-"*100} #{"\n"*3} #{key} :  Total errors (#{val.size}) #{"\n"*3} #{val.join("\n")}")
 			text.close
-			
-			puts stat
 
+			# puts "#{"\n"*3} #{"-"*100} #{"\n"*3} #{key} :  total (#{val.size}) #{"\n"*3} #{val.join("\n")}"
 		end
-
 	end
+
+# errors = File.open("D:/Ruby/work/for_logs/errors.rb", "a+")
 
 # $stderr = errors
 
