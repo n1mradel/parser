@@ -1,0 +1,46 @@
+def change_name(dir)
+	files = File.join(dir, "*.log")
+	Dir.glob(files).each do |f| 
+		if File.file?(f) 
+			name = File.basename(f)
+			if name[/m1\.log/] then  File.rename(f, dir + "main_1.log")
+			elsif name[/m2\.log/] then File.rename(f, dir + "main_2.log")
+			elsif name[/m5\.log/] then File.rename(f, dir + "main_5.log")
+			elsif name[/m6\.log/] then File.rename(f, dir + "main_6.log")
+			elsif name[/main1\.log/] then File.rename(f, dir + "main_301.log")
+			elsif name[/main2\.log/] then File.rename(f, dir + "main_302.log")
+			elsif name[/d1\.log/] then File.rename(f, dir + "drv_1.log")
+			elsif name[/d2\.log/] then File.rename(f, dir + "drv_2.log")
+			elsif name[/d3\.log/] then File.rename(f, dir + "drv_3.log")
+			elsif name[/d4\.log/] then File.rename(f, dir + "drv_4.log")
+			elsif name[/drv1\.log/] then File.rename(f, dir + "drv_301.log")
+			elsif name[/drv2\.log/] then File.rename(f, dir + "drv_302.log")
+			elsif name[/web-301\.log/] then File.rename(f, dir + "web_301.log")
+			elsif name[/web-302\.log/] then File.rename(f, dir + "web_302.log")
+			else puts "#{name} а это откуда?!"
+			end
+		end
+	end
+end
+
+change_name("D:/Ruby/work/for_logs/SPB_logs/")
+
+
+def parser_SPB(dir)
+log_files = File.join(dir, "*.log")
+text = File.new("D:/Ruby/work/for_logs/result_SPB.rb", "a+")
+text.write(Time.now)
+text.close
+stat = {}
+	Dir.glob(log_files).map do |f| 
+		if File.file?(f)
+			key = File.basename(f)
+			val = File.open(f).grep(/\[ERROR\] | \[FATAL\]/)
+			stat = {key => val}
+			text = File.open("D:/Ruby/work/for_logs/result_SPB.rb", "a+")
+			text.write("#{"\n"*3}#{"-"*100}#{"\n"*3}#{key} :  Total errors (#{val.size})#{"\n"*3}#{val.join("\n")}")
+		end
+	end
+end
+
+parser_SPB("D:/Ruby/work/for_logs/SPB_logs/")
