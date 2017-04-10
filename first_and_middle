@@ -4,43 +4,94 @@ def change_name(dir)
 		if File.file?(f) 
 			name = File.basename(f)
 			if name[/m1\.log/] then  File.rename(f, dir + "main_1.log")
-			elsif name[/m2\.log/] then File.rename(f, dir + "main_2.log")
-			elsif name[/m5\.log/] then File.rename(f, dir + "main_5.log")
-			elsif name[/m6\.log/] then File.rename(f, dir + "main_6.log")
 			elsif name[/main1\.log/] then File.rename(f, dir + "main_301.log")
-			elsif name[/main2\.log/] then File.rename(f, dir + "main_302.log")
 			elsif name[/d1\.log/] then File.rename(f, dir + "drv_1.log")
-			elsif name[/d2\.log/] then File.rename(f, dir + "drv_2.log")
-			elsif name[/d3\.log/] then File.rename(f, dir + "drv_3.log")
-			elsif name[/d4\.log/] then File.rename(f, dir + "drv_4.log")
-			elsif name[/drv1\.log/] then File.rename(f, dir + "drv_301.log")
-			elsif name[/drv2\.log/] then File.rename(f, dir + "drv_302.log")
 			elsif name[/web-301\.log/] then File.rename(f, dir + "web_301.log")
-			elsif name[/web-302\.log/] then File.rename(f, dir + "web_302.log")
 			else puts "#{name} а это откуда?!"
 			end
 		end
 	end
 end
 
-change_name("D:/Ruby/work/for_logs/SPB_logs/")
+change_name("D:/for_logs/")
 
 
-def parser_SPB(dir)
-log_files = File.join(dir, "*.log")
-text = File.new("D:/Ruby/work/for_logs/result_SPB.rb", "a+")
-text.write(Time.now)
-text.close
-stat = {}
-	Dir.glob(log_files).map do |f| 
-		if File.file?(f)
-			key = File.basename(f)
-			val = File.open(f).grep(/\[ERROR\] | \[FATAL\]/)
-			stat = {key => val}
-			text = File.open("D:/Ruby/work/for_logs/result_SPB.rb", "a+")
-			text.write("#{"\n"*3}#{"-"*100}#{"\n"*3}#{key} :  Total errors (#{val.size})#{"\n"*3}#{val.join("\n")}")
+class LogParser
+	Separator = "#{"\n"*3}#{"-"*100}#{"\n"*3}"
+	Mini_separator = "\n"*3
+	Errors_regExp = /(\[ERROR\]|\[FATAL\]).+((\n.+){0,2})/
+	ErrorName_regExp = /(?<=\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3}\s).{10,30}/
+	Date_regExp = /\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/
+	Drv_regExp = /\[execute_sql_script\]/
+
+	def initialize(dir, mask, result_path)
+		@result_log = result_path
+		@sql_log = "#{File.dirname(@result_log)}/sql_#{File.basename(@result_log)}"
+		@dir = dir
+		@mask = mask
+	end
+
+	def parse!
+		log_files = File.join(@dir, @mask)
+		write_log("#{Time.now} #{Mini_separator}")
+		Dir.glob(log_files).map do |path| 
+			if File.file?(path)
+				grep_and_write(path,  Errors_regExp)
+				sql_script_info(path)
+				write_log("#{Separator}")
+			end
 		end
+	end
+
+	def grep_and_write path, rExp
+		file_name = File.basename(path)
+		errors = {}
+		write_log("#{file_name}:#{Mini_separator}")
+		last_err = nil
+		File.open(path, "r:UTF-8").each do |txt|
+			write = if txt[rExp]
+				last_err = txt[ErrorName_regExp].chomp
+				if errors.key?(last_err)
+					errors[last_err][:count] += 1
+					errors[last_err][:complete_value] ||= true
+				else
+					errors[last_err] = {}
+					errors[last_err][:complete_value] = false
+					errors[last_err][:count] = 1
+					errors[last_err][:value] = txt
+				end
+			elsif !txt[Date_regExp]
+				errors[last_err][:value] << txt if last_err && !errors[last_err][:complete_value]
+			else
+				errors[last_err][:complete_value] = true if last_err
+			end
+		end
+	errors.each do |err_name, h|
+			# write_log("\"#{err_name}\" was #{h[:count]} times:\n\n")
+			write_log("#{h[:count]} errors: \n\n")
+			write_log("#{h[:value]}#{Mini_separator}")
+		end
+		total_errors = errors.inject(0){|s, arr| s += arr[1][:count]}
+		write_log("Total log errors: #{total_errors}#{Mini_separator}")
+	end
+
+	def sql_script_info path
+		if driver?(path)
+			sql_text =  File.open(path).grep(Drv_regExp).join("\n")
+			write_log("#{File.basename(path)}#{Mini_separator}#{sql_text}#{Mini_separator}", @sql_log)
+		end
+	end
+
+	def driver? path
+		!File.basename(path)[/drv/].nil?
+	end
+
+	def write_log txt, path = @result_log
+		f = File.open(path, "a+")
+		f.write( txt.to_s )	
+	ensure
+		f.close
 	end
 end
 
-parser_SPB("D:/Ruby/work/for_logs/SPB_logs/")
+LogParser.new("D:/for_logs/", "*.log", "D:/for_logs/result_SPB.rb").parse!
