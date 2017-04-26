@@ -1,19 +1,39 @@
-def change_name(dir)
-	files = File.join(dir, "*.log")
-	Dir.glob(files).each do |f| 
-		if File.file?(f) 
-			name = File.basename(f)
-			if name[/m1\.log/] then  File.rename(f, dir + "main_1.log")
-			elsif name[/main1\.log/] then File.rename(f, dir + "main_301.log")
-			elsif name[/d1\.log/] then File.rename(f, dir + "drv_1.log")
-			elsif name[/web-301\.log/] then File.rename(f, dir + "web_301.log")
-			else puts "#{name} а это откуда?!"
+class Change_name
+	Ip_hash = {
+		"main1" => "10.30.20.1",
+		"drv1" => "10.30.20.2",
+		"web-301" => "10.30.20.3",
+		"line1" => "10.30.20.4",
+		"default" => "а это откуда?!",
+	}
+	Time_regExp = /\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_/
+
+	def initialize(dir)
+		@dir = dir
+	end
+
+	def rename
+		files = File.join(@dir, "*.log*")
+		Dir.glob(files).each do |f| 
+			if File.file?(f) 
+				rname(f)
 			end
 		end
 	end
+
+	def rname f
+		File.rename( f, new_name(f) )
+	end
+
+	def new_name f
+		date = f[Time_regExp]
+		name = File.basename(f)
+		ip_key = Ip_hash.keys.find{|k| name[k]} || "default"
+		@dir + "#{date}#{Ip_hash[ip_key]}_" + name[/(?<=_)[^_.]+.log/].to_s
+	end
 end
 
-change_name("D:/for_logs/")
+Change_name.new("D:/for_logs/").rename
 
 
 class LogParser
